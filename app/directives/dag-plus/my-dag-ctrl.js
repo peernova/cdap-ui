@@ -84,6 +84,14 @@ angular.module(PKG.name + '.commons')
       );
     };
 
+    vm.setSelectedNodes = (nodes) => {
+      vm.selectedNode = nodes
+    };
+
+    vm.setSelectedConnections = (connections) => {
+      selectedConnections = connections
+    };
+
     vm.clearSelectedNodes = () => {
       vm.selectedNode = [];
       vm.instance.clearDragSelection();
@@ -131,23 +139,25 @@ angular.module(PKG.name + '.commons')
      * I don't know why but will need to file a issue and see what is going on. :sigh:
      */
     vm.getSelectedConnections = () => {
-      const connectionsMap = {};
-      $scope.connections.forEach(conn => {
-        connectionsMap[`${conn.from}###${conn.to}`] = conn;
-      });
-      return selectedConnections
-        .map(({source, target}) => {
-          return {
-            from: source.getAttribute('data-nodeid'),
-            to: target.getAttribute('data-nodeid'),
-          };
-        }).map(({from, to}) => {
-          const originalConnection = connectionsMap[`${from}###${to}`];
-          if (originalConnection) {
-            return originalConnection;
-          }
-          return {from, to};
-        });
+      // const connectionsMap = {};
+      // $scope.connections.forEach(conn => {
+      //   connectionsMap[`${conn.from}###${conn.to}`] = conn;
+      // });
+      // return selectedConnections
+      //   .map(({source, target}) => {
+      //     return {
+      //       from: source.getAttribute('data-nodeid'),
+      //       to: target.getAttribute('data-nodeid'),
+      //     };
+      //   })
+      //   .map(({from, to}) => {
+      //     const originalConnection = connectionsMap[`${from}###${to}`];
+      //     if (originalConnection) {
+      //       return originalConnection;
+      //     }
+      //     return {from, to};
+      //   });
+      return selectedConnections;
     };
     vm.deleteSelectedNodes = () => vm.onKeyboardDelete();
     vm.onPluginContextMenuOpen = (nodeId) => {
@@ -1011,14 +1021,13 @@ angular.module(PKG.name + '.commons')
     }
 
     function clearConnectionsSelection() {
-      selectedConnections.forEach((conn) => {
-        const existingTypes = conn.getType();
-        if (Array.isArray(existingTypes) && existingTypes.indexOf('selected') !== -1) {
-          conn.toggleType('selected');
-          conn.removeClass('selected-connector');
-        }
-      });
-
+      // selectedConnections.forEach((conn) => {
+      //   const existingTypes = conn.getType();
+      //   if (Array.isArray(existingTypes) && existingTypes.indexOf('selected') !== -1) {
+      //     conn.toggleType('selected');
+      //     conn.removeClass('selected-connector');
+      //   }
+      // });
       selectedConnections = [];
     }
 
@@ -1289,34 +1298,34 @@ angular.module(PKG.name + '.commons')
           }
         });
         if (!vm.isDisabled) {
-          vm.secondInstance.setDraggable('diagram-container', false);
+          //vm.secondInstance.setDraggable('diagram-container', false);
         }
       }
 
       // doing this to listen to changes to just $scope.nodes instead of everything else
-      $scope.$watch('nodes', function() {
-        if (!vm.isDisabled) {
-          if (nodesTimeout) {
-            $timeout.cancel(nodesTimeout);
-          }
-          nodesTimeout = $timeout(function () {
-            makeNodesDraggable();
-            initNodes();
-            /**
-             * TODO(https://issues.cask.co/browse/CDAP-16423): Need to debug why setting zoom on init doesn't set the correct zoom
-             *
-             * Without this, on initial load the nodes drag is weird. The cursor travels outside the node
-             * meaning the nodes are dragged only to some extent and not along with the mouse cursor.
-             * The underlying reason is that the zoom is incorrect in the graph. Once the zoom is set
-             * right the drag happens correctly.
-             *
-             * This is a escape hatch for us to set zoom and make dragging
-             * right one each node addition. This is not a perfect solution
-             */
-            setZoom(vm.instance.getZoom(), vm.instance);
-          });
-        }
-      }, true);
+      // $scope.$watch('nodes', function() {
+      //   if (!vm.isDisabled) {
+      //     if (nodesTimeout) {
+      //       $timeout.cancel(nodesTimeout);
+      //     }
+      //     nodesTimeout = $timeout(function () {
+      //       makeNodesDraggable();
+      //       initNodes();
+      //       /**
+      //        * TODO(https://issues.cask.co/browse/CDAP-16423): Need to debug why setting zoom on init doesn't set the correct zoom
+      //        *
+      //        * Without this, on initial load the nodes drag is weird. The cursor travels outside the node
+      //        * meaning the nodes are dragged only to some extent and not along with the mouse cursor.
+      //        * The underlying reason is that the zoom is incorrect in the graph. Once the zoom is set
+      //        * right the drag happens correctly.
+      //        *
+      //        * This is a escape hatch for us to set zoom and make dragging
+      //        * right one each node addition. This is not a perfect solution
+      //        */
+      //       setZoom(vm.instance.getZoom(), vm.instance);
+      //     });
+      //   }
+      // }, true);
 
       // This is needed to redraw connections and endpoints on browser resize
       angular.element($window).on('resize', vm.instance.repaintEverything);
@@ -1339,7 +1348,25 @@ angular.module(PKG.name + '.commons')
       DAGPlusPlusNodesActionsFactory.selectNode(node.name);
     };
 
-    vm.onNodeClick = function(event, node) {
+    vm.getConnections = () => {
+      return DAGPlusPlusNodesStore.getConnections();
+    };
+  
+    vm.getNodes = () => {
+      return DAGPlusPlusNodesStore.getNodes();
+    };
+  
+    vm.updateNodesStoreNodes = (nodes) => {
+      DAGPlusPlusNodesStore.setNodes(nodes);
+      HydratorPlusPlusConfigStore.setNodes(nodes);
+    };
+  
+    vm.updateNodesStoreConnections = (connections) => {
+      DAGPlusPlusNodesStore.setConnections(connections);
+      HydratorPlusPlusConfigStore.setConnections(connections);
+    };
+
+    vm.onNodeClick = function(node) {
       vm.resetActivePluginForComment();
       closeMetricsPopover(node);
 
@@ -1362,7 +1389,6 @@ angular.module(PKG.name + '.commons')
       if (event) {
         event.stopPropagation();
       }
-
       const newNodes = angular.copy(nodes);
       newNodes.forEach(node => {
         DAGPlusPlusNodesActionsFactory.removeNode(node.id);
@@ -1783,6 +1809,10 @@ angular.module(PKG.name + '.commons')
 
     vm.resetActivePluginForComment = (nodeId = null) => {
       vm.activePluginToComment = nodeId;
+    };
+
+    vm.getActivePluginForComment = () => {
+      return vm.activePluginToComment;
     };
 
     vm.initPipelineComments = () => {

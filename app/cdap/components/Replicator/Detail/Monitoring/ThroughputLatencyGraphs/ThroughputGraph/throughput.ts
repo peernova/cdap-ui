@@ -252,8 +252,9 @@ export function renderThroughputGraph(
       if (left + tooltipWidth >= width) {
         left = left - (left + tooltipWidth - width);
       }
-      left = left + 'px';
-      onHover(top, left, true, d);
+      // left = left + 'px';
+      const strLeft = left.toString() + 'px';
+      onHover(top, strLeft, true, d);
     })
     .on('mouseout', (d) => {
       onHover(0, 0, false, d);

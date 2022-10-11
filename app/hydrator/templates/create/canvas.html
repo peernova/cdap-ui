@@ -15,6 +15,7 @@
 -->
 
 <my-dag-plus ng-class="{'canvas-scroll': CanvasCtrl.state.setScroll}"
+  ng-if="true"
   nodes="CanvasCtrl.nodes"
   connections="CanvasCtrl.connections"
   context="CanvasCtrl"
@@ -22,3 +23,14 @@
   separation="200"
   preview-mode="CanvasCtrl.previewMode"
 ></my-dag-plus>
+
+<canvas-react
+  ng-if="false"
+  angular-nodes="CanvasCtrl.nodes"
+  angular-connections="CanvasCtrl.connections"
+  update-nodes="CanvasCtrl.updateNodesStoreNodes"
+  update-connections="CanvasCtrl.updateNodesStoreConnections"
+  on-properties-click="CanvasCtrl.openPluginProperties"
+  get-connections="CanvasCtrl.getConnections"
+  get-nodes="CanvasCtrl.getNodes"
+></canvas-react>
