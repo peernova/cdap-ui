@@ -162,7 +162,21 @@ const isDrawingConnection = (state) => {
   return state.connectionHandleId !== null;
 };
 
-export const PluginNode = ({ data, selected, dragging, zIndex }) => {
+interface IPluginNodeProps {
+  data: any;
+  selected: boolean;
+  dragging: boolean;
+  showAlertsPort?: boolean;
+  showErrorsPort?: boolean;
+}
+
+export const PluginNode = ({
+  data,
+  selected,
+  dragging,
+  showAlertsPort,
+  showErrorsPort,
+}: IPluginNodeProps) => {
   const {
     node,
     onPropertiesClick,
@@ -280,13 +294,13 @@ export const PluginNode = ({ data, selected, dragging, zIndex }) => {
         <CaretHandle id="source_right" type="source" position={Position.Right}>
           <div></div>
         </CaretHandle>
-        {shouldShowErrorsPort(node) && (
+        {showAlertsPort && (
           <CaretHandle id="source_error" type="source" position={Position.Bottom}>
             <span>Error</span>
             <div></div>
           </CaretHandle>
         )}
-        {shouldShowAlertsPort(node) && (
+        {showErrorsPort && (
           <CaretHandle id="source_alert" type="source" position={Position.Bottom}>
             <span>Alert</span>
             <div></div>
@@ -303,5 +317,17 @@ export const PluginNode = ({ data, selected, dragging, zIndex }) => {
         onAddComment={() => {}}
       />
     </>
+  );
+};
+
+export const PluginNodeWithAlertAndError = ({ data, selected, dragging }) => {
+  return (
+    <PluginNode
+      data={data}
+      selected={selected}
+      dragging={dragging}
+      showAlertsPort={true}
+      showErrorsPort={true}
+    />
   );
 };

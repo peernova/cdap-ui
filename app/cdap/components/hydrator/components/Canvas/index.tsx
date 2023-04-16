@@ -16,7 +16,7 @@
 
 import { Button } from '@material-ui/core';
 import { cloneDeep } from 'lodash';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useLayoutEffect } from 'react';
 import ReactFlow, {
   Controls,
   Background,
@@ -33,10 +33,13 @@ import ReactFlow, {
   ConnectionLineType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { PluginNode } from './PluginNode';
+import { PluginNode, PluginNodeWithAlertAndError } from './PluginNode';
 import ViewQuiltRoundedIcon from '@material-ui/icons/ViewQuiltRounded';
 import PipelineContextMenu from 'components/PipelineContextMenu';
 import { connectionIsValid, getPluginColor } from './helper';
+import { PLUGIN_TYPES } from './constants';
+import AvailablePluginsStore from 'services/AvailablePluginsStore';
+import { useOnUnmount } from 'services/react/customHooks/useOnUnmount';
 
 interface ICanvasProps {
   angularNodes: any;
@@ -58,20 +61,28 @@ interface ICanvasProps {
   shouldShowErrorsPort: (node: any) => boolean;
 }
 
-const nodeTypes = { plugin: PluginNode };
+const nodeTypes = { plugin: PluginNode, pluginWithAlertAndError: PluginNodeWithAlertAndError };
 
-const getConnectionsForDisplay = (connections) => {
+const getConnectionsForDisplay = (connections, nodes) => {
   return connections.map((conn) => {
-    return {
+    const reactFlowConn: any = {
       id: 'reactflow__edge-' + conn.from + '-' + conn.to,
       source: conn.from,
       target: conn.to,
       type: 'smoothstep',
-      style: { strokeWidth: '4px' },
+      style: { strokeWidth: '2px' },
       markerEnd: {
         type: MarkerType.Arrow,
       },
     };
+    const fromNode = nodes.find((node) => node.name === conn.from);
+    const toNode = nodes.find((node) => node.name === conn.to);
+    if (toNode.type === PLUGIN_TYPES.ERROR_TRANSFORM) {
+      reactFlowConn.sourceHandle = 'source_error';
+    } else if (toNode.type === PLUGIN_TYPES.ALERT_PUBLISHER) {
+      reactFlowConn.sourceHandle = 'source_alert';
+    }
+    return reactFlowConn;
   });
 };
 
@@ -118,13 +129,7 @@ const Canvas = ({
         shouldShowAlertsPort,
         shouldShowErrorsPort,
       };
-      if (existingIds.includes(node.name)) {
-        return {
-          ...reactNodes.find((nd) => nd.id === node.name),
-          data,
-        };
-      }
-      return {
+      const reactflowNode = {
         id: node.name,
         data,
         type: 'plugin',
@@ -133,6 +138,13 @@ const Canvas = ({
           y: parseInt(node._uiPosition.top, 10),
         },
       };
+      if (shouldShowAlertsPort(node) && shouldShowErrorsPort(node)) {
+        reactflowNode.type = 'pluginWithAlertAndError';
+      }
+      if (existingIds.includes(node.name)) {
+        reactflowNode.position = reactNodes.find((nd) => nd.id === node.name).position;
+      }
+      return reactflowNode;
     });
   };
 
@@ -140,14 +152,18 @@ const Canvas = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   // draw connections
-  const onConnect = useCallback((params) => {
-    params.type = 'smoothstep';
-    params.markerEnd = {
-      type: MarkerType.ArrowClosed,
-    };
-    params.style = { strokeWidth: '4px' };
-    setEdges((eds) => addEdge(params, eds));
-  }, []);
+  const onConnect = useCallback(
+    (params) => {
+      params.type = 'smoothstep';
+      params.markerEnd = {
+        type: MarkerType.ArrowClosed,
+      };
+      params.style = { strokeWidth: '4px' };
+      console.log(params);
+      setEdges((eds) => addEdge(params, eds));
+    },
+    [setEdges]
+  );
 
   // set selection state to angular store
   // useEffect(() => {
@@ -180,11 +196,11 @@ const Canvas = ({
     });
   }, [JSON.stringify(getAngularNodes())]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setEdges(() => {
-      return [].concat(getConnectionsForDisplay(getAngularConnections()));
+      return [].concat(getConnectionsForDisplay(getAngularConnections(), getAngularNodes()));
     });
-  }, [JSON.stringify(getAngularConnections())]);
+  }, [nodes]);
 
   const getSelectedConnections = () => {
     const selectedEdgesId = edges.filter((edge) => edge.selected).map((edge) => edge.id);
