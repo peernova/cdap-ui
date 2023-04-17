@@ -389,6 +389,7 @@
   ng-if="true"
   angular-nodes="nodes"
   angular-connections="connections"
+  is-disabled="isDisabled"
   update-nodes="DAGPlusPlusCtrl.updateNodesStoreNodes"
   update-connections="DAGPlusPlusCtrl.updateNodesStoreConnections"
   on-properties-click="DAGPlusPlusCtrl.onNodeClick"
@@ -404,4 +405,6 @@
   get-custom-icon-src="DAGPlusPlusCtrl.getCustomIconSrc"
   should-show-alerts-port="DAGPlusPlusCtrl.shouldShowAlertsPort"
   should-show-errors-port="DAGPlusPlusCtrl.shouldShowErrorsPort"
+  undo-actions="DAGPlusPlusCtrl.undoActions"
+  redo-actions="DAGPlusPlusCtrl.redoActions"
 ></canvas-react>

@@ -14,11 +14,10 @@
  * the License.
  */
 
-import { Button } from '@material-ui/core';
-import { cloneDeep } from 'lodash';
-import React, { useCallback, useEffect, useState, useLayoutEffect } from 'react';
+import React, { useCallback, useEffect, useState, useLayoutEffect, useMemo } from 'react';
 import ReactFlow, {
   Controls,
+  ControlButton,
   Background,
   useEdgesState,
   addEdge,
@@ -34,7 +33,8 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { PluginNode, PluginNodeWithAlertAndError } from './PluginNode';
-import ViewQuiltRoundedIcon from '@material-ui/icons/ViewQuiltRounded';
+import UndoIcon from '@material-ui/icons/Undo';
+import RedoIcon from '@material-ui/icons/Redo';
 import PipelineContextMenu from 'components/PipelineContextMenu';
 import { connectionIsValid, getPluginColor } from './helper';
 import { PLUGIN_TYPES } from './constants';
@@ -43,6 +43,7 @@ import { EdgeStyle, ConnectionLineStyle } from './styles';
 interface ICanvasProps {
   angularNodes: any;
   angularConnections: any;
+  isDisabled: boolean;
   updateNodes: (nodes: any[]) => void;
   updateConnections: (connections: any[]) => void;
   onPropertiesClick: (node: any) => void;
@@ -58,6 +59,8 @@ interface ICanvasProps {
   getCustomIconSrc: (node: any) => string;
   shouldShowAlertsPort: (node: any) => boolean;
   shouldShowErrorsPort: (node: any) => boolean;
+  undoActions: () => void;
+  redoActions: () => void;
 }
 
 const nodeTypes = { plugin: PluginNode, pluginWithAlertAndError: PluginNodeWithAlertAndError };
@@ -84,6 +87,7 @@ const getConnectionsForDisplay = (connections, nodes) => {
 const Canvas = ({
   angularNodes,
   angularConnections,
+  isDisabled,
   updateNodes,
   updateConnections,
   onPropertiesClick,
@@ -99,6 +103,8 @@ const Canvas = ({
   getCustomIconSrc,
   shouldShowAlertsPort,
   shouldShowErrorsPort,
+  undoActions,
+  redoActions,
 }: ICanvasProps) => {
   const reactFlowInstance = useReactFlow();
   const deletePressed = useKeyPress(['Backspace', 'Delete']);
@@ -159,6 +165,9 @@ const Canvas = ({
   // it requires some adjustments to reuse the onKeyboardDelete function in dag-plus-ctrl
   // writing the logic here to directly delete
   useEffect(() => {
+    if (isDisabled) {
+      return;
+    }
     const selectedNodesId = nodes.filter((node) => node.selected).map((node) => node.id);
     const selectedEdgesId = edges.filter((edge) => edge.selected).map((edge) => edge.id);
     setNodes((nds) => nds.filter((node) => !selectedNodesId.includes(node.id)));
@@ -259,6 +268,8 @@ const Canvas = ({
         connectionLineStyle={ConnectionLineStyle}
         connectionLineType={ConnectionLineType.SmoothStep}
         onConnectStart={() => {}}
+        nodesDraggable={!isDisabled}
+        nodesConnectable={!isDisabled}
       >
         <Background />
         {nodes.length > 5 && (
@@ -268,7 +279,14 @@ const Canvas = ({
             }}
           />
         )}
-        <Controls position="top-right" style={{ marginTop: '100px' }}></Controls>
+        <Controls position="top-right" style={{ marginTop: '100px' }} showInteractive={!isDisabled}>
+          <ControlButton title="Undo" onClick={undoActions}>
+            <UndoIcon />
+          </ControlButton>
+          <ControlButton title="Redo" onClick={redoActions}>
+            <RedoIcon />
+          </ControlButton>
+        </Controls>
       </ReactFlow>
 
       <PipelineContextMenu
@@ -287,6 +305,7 @@ const Canvas = ({
 export const WrapperCanvas = ({
   angularNodes,
   angularConnections,
+  isDisabled,
   updateNodes,
   updateConnections,
   onPropertiesClick,
@@ -302,12 +321,15 @@ export const WrapperCanvas = ({
   getCustomIconSrc,
   shouldShowAlertsPort,
   shouldShowErrorsPort,
+  undoActions,
+  redoActions,
 }: ICanvasProps) => {
   return (
     <ReactFlowProvider>
       <Canvas
         angularNodes={angularNodes}
         angularConnections={angularConnections}
+        isDisabled={isDisabled}
         updateNodes={updateNodes}
         updateConnections={updateConnections}
         onPropertiesClick={onPropertiesClick}
@@ -323,6 +345,8 @@ export const WrapperCanvas = ({
         getCustomIconSrc={getCustomIconSrc}
         shouldShowAlertsPort={shouldShowAlertsPort}
         shouldShowErrorsPort={shouldShowErrorsPort}
+        undoActions={undoActions}
+        redoActions={redoActions}
       />
     </ReactFlowProvider>
   );
