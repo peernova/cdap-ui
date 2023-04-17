@@ -14,23 +14,17 @@
  * the License.
  */
 
-export const PLUGIN_TYPES = {
-  // source
-  BATCH_SOURCE: 'batchsource',
-  // transform
-  TRANSFORM: 'transform',
-  SPLITTER_TRANSFORM: 'splittertransform',
-  // analytics
-  BATCH_AGGREGATOR: 'batchaggregator',
-  SPARK_COMPUTE: 'sparkcompute',
-  SPARK_PROGRAM: 'sparkprogram',
-  BATCH_JOINER: 'batchjoiner',
-  // sink
-  BATCH_SINK: 'batchsink',
-  // conditions and actions
-  CONDITION: 'condition',
-  ACTION: 'action',
-  // error handlers and alerts
-  ALERT_PUBLISHER: 'alertpublisher',
-  ERROR_TRANSFORM: 'errortransform',
+import { MarkerType } from 'reactflow';
+
+export const EdgeStyle = {
+  type: 'smoothstep',
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+  },
+  style: { strokeWidth: '2px' },
+};
+
+export const ConnectionLineStyle = {
+  strokeWidth: '2px',
+  stroke: '#58B7F6',
 };

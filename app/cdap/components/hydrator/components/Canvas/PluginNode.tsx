@@ -267,6 +267,7 @@ export const PluginNode = ({
                 onClick={() => {
                   onPropertiesClick(node);
                 }}
+                size="small"
               >
                 Properties
               </PrimaryOutlinedButton>
@@ -320,6 +321,13 @@ export const PluginNode = ({
   );
 };
 
+/**
+ *
+ * I need this because the connection port is not really working well
+ * with live rendering. It will encounter issue when importing a pipeline
+ * because connections were drawn before the plugin rendered. Plugins with
+ * static ports will resolve this issue
+ */
 export const PluginNodeWithAlertAndError = ({ data, selected, dragging }) => {
   return (
     <PluginNode

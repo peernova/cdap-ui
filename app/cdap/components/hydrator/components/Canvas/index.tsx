@@ -38,8 +38,7 @@ import ViewQuiltRoundedIcon from '@material-ui/icons/ViewQuiltRounded';
 import PipelineContextMenu from 'components/PipelineContextMenu';
 import { connectionIsValid, getPluginColor } from './helper';
 import { PLUGIN_TYPES } from './constants';
-import AvailablePluginsStore from 'services/AvailablePluginsStore';
-import { useOnUnmount } from 'services/react/customHooks/useOnUnmount';
+import { EdgeStyle, ConnectionLineStyle } from './styles';
 
 interface ICanvasProps {
   angularNodes: any;
@@ -69,11 +68,7 @@ const getConnectionsForDisplay = (connections, nodes) => {
       id: 'reactflow__edge-' + conn.from + '-' + conn.to,
       source: conn.from,
       target: conn.to,
-      type: 'smoothstep',
-      style: { strokeWidth: '2px' },
-      markerEnd: {
-        type: MarkerType.Arrow,
-      },
+      ...EdgeStyle,
     };
     const fromNode = nodes.find((node) => node.name === conn.from);
     const toNode = nodes.find((node) => node.name === conn.to);
@@ -84,11 +79,6 @@ const getConnectionsForDisplay = (connections, nodes) => {
     }
     return reactFlowConn;
   });
-};
-
-const connectionLineStyle = {
-  strokeWidth: '2px',
-  stroke: '#58B7F6',
 };
 
 const Canvas = ({
@@ -154,12 +144,6 @@ const Canvas = ({
   // draw connections
   const onConnect = useCallback(
     (params) => {
-      params.type = 'smoothstep';
-      params.markerEnd = {
-        type: MarkerType.ArrowClosed,
-      };
-      params.style = { strokeWidth: '4px' };
-      console.log(params);
       setEdges((eds) => addEdge(params, eds));
     },
     [setEdges]
@@ -226,14 +210,33 @@ const Canvas = ({
   };
 
   const checkIfConnectionExistsOrValid = (params) => {
+    // exisiting connections
+    if (edges.find((edge) => edge.source === params.source && edge.target === params.target)) {
+      return false;
+    }
     // same node
-    console.log(params);
     if (params.source === params.target) {
       return false;
     }
     const fromNode = nodes.find((node) => node.id === params.source);
     const toNode = nodes.find((node) => node.id === params.target);
     return connectionIsValid(fromNode.data.node, toNode.data.node);
+  };
+
+  const addEdgeStyle = (params) => {
+    const fromNode = nodes.find((node) => node.id === params.source);
+    const toNode = nodes.find((node) => node.id === params.target);
+    const newParams = { ...params, ...EdgeStyle };
+    if (
+      toNode.data.node.type === PLUGIN_TYPES.CONDITION ||
+      fromNode.data.node.type === PLUGIN_TYPES.ACTION ||
+      toNode.data.node.type === PLUGIN_TYPES.ACTION ||
+      fromNode.data.node.type === PLUGIN_TYPES.SPARK_PROGRAM ||
+      toNode.data.node.type === PLUGIN_TYPES.SPARK_PROGRAM
+    ) {
+      newParams.style.strokeDasharray = '4,8';
+    }
+    return newParams;
   };
 
   return (
@@ -246,17 +249,16 @@ const Canvas = ({
         onEdgesChange={onEdgesChange}
         onConnect={(params) => {
           if (checkIfConnectionExistsOrValid(params)) {
-            onConnect(params);
-            addConnections(params);
+            const newParams = addEdgeStyle(params);
+            onConnect(newParams);
+            addConnections(newParams);
           }
         }}
         nodeTypes={nodeTypes}
         deleteKeyCode={null}
-        connectionLineStyle={connectionLineStyle}
+        connectionLineStyle={ConnectionLineStyle}
         connectionLineType={ConnectionLineType.SmoothStep}
-        onConnectStart={() => {
-          console.log('here');
-        }}
+        onConnectStart={() => {}}
       >
         <Background />
         {nodes.length > 5 && (
