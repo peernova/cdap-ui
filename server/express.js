@@ -302,6 +302,15 @@ function makeApp(authAddress, cdapConfig, uiSettings) {
     res.send(`window.CDAP_UI_THEME = ${JSON.stringify(uiThemeConfig)};`);
   });
 
+  app.get('/redirect-cuneiform.js', function(req, res) {
+    res.header({
+      'Content-Type': 'text/javascript',
+      'Cache-Control': 'no-store, must-revalidate',
+    });
+    // send to top of i-frame
+    res.send(`if(document.getElementById('redirect')){ window.top.location.href=document.getElementById('redirect').getAttribute("data-redirectUrl");}`);
+  });
+
   /**
    * This is used to stream content from Market directly to CDAP
    * ie. download app from market, and publish to CDAP
@@ -589,6 +598,14 @@ function makeApp(authAddress, cdapConfig, uiSettings) {
     function(req, res) {
       if (!authAddress.get() || req.headers.authorization) {
         res.redirect('/');
+        return;
+      }
+      if (process.env.CUNEIFORM_UI_URL) {
+        const cuneiformUrl = process.env.CUNEIFORM_UI_URL;
+        const studioUrl = process.env.CUNEIFORM_UI_URL + '/studio?' + 'redirectUrl=' + req.query.redirectUrl;
+        const redirectUrl = cuneiformUrl + '/logout' + '?redirectUrl=' + encodeURIComponent(JSON.stringify(studioUrl));
+        res.send('<script nonce="' + res.locals.nonce + '" src="./redirect-cuneiform.js" data-redirectUrl="' +
+            redirectUrl + '" id="redirect"></script>');
         return;
       }
       res.render('login', { nonceVal: res.locals.nonce });
