@@ -32,20 +32,20 @@ class WindowManager {
     }
   };
   constructor() {
-    if (window.parent.Cypress) {
+    if (window.Cypress) {
       return;
     }
     if (ifvisible.now('hidden')) {
       this.onBlurEventHandler();
     }
     ifvisible.on('idle', () => {
-      if (window.parent.Cypress) {
+      if (window.Cypress) {
         return;
       }
       this.onBlurEventHandler();
     });
     ifvisible.on('wakeup', () => {
-      if (window.parent.Cypress) {
+      if (window.Cypress) {
         return;
       }
       this.onFocusHandler();
@@ -97,7 +97,7 @@ class WindowManager {
   };
 
   public isWindowActive = () => {
-    if (window.parent.Cypress) {
+    if (window.Cypress) {
       return true;
     }
     return ifvisible.now('active');
